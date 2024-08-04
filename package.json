@@ -1,6 +1,6 @@
 {
     "name": "@mentoor.io/hazelnut-client",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "Web Client SDK for Hazelnut",
     "main": "src/index.ts",
     "dependencies": {

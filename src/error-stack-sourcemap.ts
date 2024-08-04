@@ -22,12 +22,18 @@ export async function parseStackTraceFromSourcemap(
 
   // now fetch all the urls
   if (fetchingUrls.length > 0) {
-    await loadSourcemapFiles(
-      fetchingUrls.map(file => sourcemapUrlParser(file)),
-    );
+    try {
+      await loadSourcemapFiles(
+        fetchingUrls.map(file => sourcemapUrlParser(file)),
+      );
 
-    // clear the fetching urls
-    fetchingUrls.length = 0;
+      // clear the fetching urls
+      fetchingUrls.length = 0;
+    } catch (error: any) {
+      console.log("Failed to load sourcemaps", error.message);
+
+      return stack;
+    }
   }
 
   // source maps urls are teh same as js file name suffixed with .map

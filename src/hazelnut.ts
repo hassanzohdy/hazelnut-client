@@ -20,74 +20,73 @@ class IndexedDB {
   static openDB() {
     // ignore DB for now
     return;
-    return new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open(IndexedDB.dbName, IndexedDB.dbVersion);
-      request.onerror = (event) => {
-        reject(`Error opening IndexedDB: ${event.target}`);
-      };
-      request.onsuccess = (event) => {
-        resolve((event.target as IDBOpenDBRequest).result);
-      };
-      request.onupgradeneeded = (event) => {
-        const db = (event.target as IDBOpenDBRequest).result;
-        if (!db.objectStoreNames.contains(IndexedDB.eventStore)) {
-          db.createObjectStore(IndexedDB.eventStore, {
-            keyPath: "id",
-            autoIncrement: true,
-          });
-        }
-        if (!db.objectStoreNames.contains(IndexedDB.errorStore)) {
-          db.createObjectStore(IndexedDB.errorStore, {
-            keyPath: "id",
-            autoIncrement: true,
-          });
-        }
-      };
-    });
+    // return new Promise<IDBDatabase>((resolve, reject) => {
+    //   const request = indexedDB.open(IndexedDB.dbName, IndexedDB.dbVersion);
+    //   request.onerror = event => {
+    //     reject(`Error opening IndexedDB: ${event.target}`);
+    //   };
+    //   request.onsuccess = event => {
+    //     resolve((event.target as IDBOpenDBRequest).result);
+    //   };
+    //   request.onupgradeneeded = event => {
+    //     const db = (event.target as IDBOpenDBRequest).result;
+    //     if (!db.objectStoreNames.contains(IndexedDB.eventStore)) {
+    //       db.createObjectStore(IndexedDB.eventStore, {
+    //         keyPath: "id",
+    //         autoIncrement: true,
+    //       });
+    //     }
+    //     if (!db.objectStoreNames.contains(IndexedDB.errorStore)) {
+    //       db.createObjectStore(IndexedDB.errorStore, {
+    //         keyPath: "id",
+    //         autoIncrement: true,
+    //       });
+    //     }
+    //   };
+    // });
   }
 
   static async save(storeName: string, data: any) {
     // ignore DB for now
     return;
-    const db = await IndexedDB.openDB();
-    return new Promise<void>((resolve, reject) => {
-      const transaction = db.transaction([storeName], "readwrite");
-      transaction.oncomplete = () => resolve();
-      transaction.onerror = (event) =>
-        reject(`Error saving data: ${event.target}`);
-      const store = transaction.objectStore(storeName);
-      store.add(data);
-    });
+    // const db = await IndexedDB.openDB();
+    // return new Promise<void>((resolve, reject) => {
+    //   const transaction = db.transaction([storeName], "readwrite");
+    //   transaction.oncomplete = () => resolve();
+    //   transaction.onerror = event =>
+    //     reject(`Error saving data: ${event.target}`);
+    //   const store = transaction.objectStore(storeName);
+    //   store.add(data);
+    // });
   }
 
   static async getAll(storeName: string) {
     // ignore DB for now
     return;
-    const db = await IndexedDB.openDB();
-    return new Promise<any[]>((resolve, reject) => {
-      const transaction = db.transaction([storeName], "readonly");
-      transaction.onerror = (event) =>
-        reject(`Error fetching data: ${event.target}`);
-      const store = transaction.objectStore(storeName);
-      const request = store.getAll();
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = (event) =>
-        reject(`Error fetching data: ${event.target}`);
-    });
+    // const db = await IndexedDB.openDB();
+    // return new Promise<any[]>((resolve, reject) => {
+    //   const transaction = db.transaction([storeName], "readonly");
+    //   transaction.onerror = event =>
+    //     reject(`Error fetching data: ${event.target}`);
+    //   const store = transaction.objectStore(storeName);
+    //   const request = store.getAll();
+    //   request.onsuccess = () => resolve(request.result);
+    //   request.onerror = event => reject(`Error fetching data: ${event.target}`);
+    // });
   }
 
   static async delete(storeName: string, id: number) {
     // ignore DB for now
     return;
-    const db = await IndexedDB.openDB();
-    return new Promise<void>((resolve, reject) => {
-      const transaction = db.transaction([storeName], "readwrite");
-      transaction.oncomplete = () => resolve();
-      transaction.onerror = (event) =>
-        reject(`Error deleting data: ${event.target}`);
-      const store = transaction.objectStore(storeName);
-      store.delete(id);
-    });
+    // const db = await IndexedDB.openDB();
+    // return new Promise<void>((resolve, reject) => {
+    //   const transaction = db.transaction([storeName], "readwrite");
+    //   transaction.oncomplete = () => resolve();
+    //   transaction.onerror = event =>
+    //     reject(`Error deleting data: ${event.target}`);
+    //   const store = transaction.objectStore(storeName);
+    //   store.delete(id);
+    // });
   }
 }
 
@@ -100,7 +99,7 @@ export class Hazelnut {
   /**
    * API Request
    */
-  protected request: Endpoint;
+  protected request!: Endpoint;
 
   /**
    * Session ID
@@ -235,28 +234,29 @@ export class Hazelnut {
    * Retry sending failed requests from IndexedDB
    */
   protected async retryFailedRequests() {
-    if (navigator.onLine) {
-      const failedEvents = await IndexedDB.getAll(IndexedDB.eventStore);
-      const failedErrors = await IndexedDB.getAll(IndexedDB.errorStore);
+    return;
+    // if (navigator.onLine) {
+    //   const failedEvents = await IndexedDB.getAll(IndexedDB.eventStore);
+    //   const failedErrors = await IndexedDB.getAll(IndexedDB.errorStore);
 
-      for (const event of failedEvents) {
-        try {
-          await this.send("event", event);
-          await IndexedDB.delete(IndexedDB.eventStore, event.id);
-        } catch (error) {
-          this.consoleErrorMethod("Retrying failed event:", error);
-        }
-      }
+    //   for (const event of failedEvents) {
+    //     try {
+    //       await this.send("event", event);
+    //       await IndexedDB.delete(IndexedDB.eventStore, event.id);
+    //     } catch (error) {
+    //       this.consoleErrorMethod("Retrying failed event:", error);
+    //     }
+    //   }
 
-      for (const error of failedErrors) {
-        try {
-          await this.send("error", error);
-          await IndexedDB.delete(IndexedDB.errorStore, error.id);
-        } catch (error) {
-          this.consoleErrorMethod("Retrying failed error:", error);
-        }
-      }
-    }
+    //   for (const error of failedErrors) {
+    //     try {
+    //       await this.send("error", error);
+    //       await IndexedDB.delete(IndexedDB.errorStore, error.id);
+    //     } catch (error) {
+    //       this.consoleErrorMethod("Retrying failed error:", error);
+    //     }
+    //   }
+    // }
   }
 
   protected async processQueue() {
@@ -288,7 +288,7 @@ export class Hazelnut {
     const finalStack = this.options.sourcemap
       ? await parseStackTraceFromSourcemap(
           stack,
-          this.options.sourceMapUrlParser
+          this.options.sourceMapUrlParser,
         )
       : stack;
 
@@ -323,7 +323,7 @@ export class Hazelnut {
 
       const encryptedData: string = encrypt(
         data,
-        this.options.encryptionKey || "hazelnutKey"
+        this.options.encryptionKey || "hazelnutKey",
       );
 
       this.request
@@ -333,7 +333,7 @@ export class Hazelnut {
         .catch(() => {
           IndexedDB.save(
             type === "event" ? IndexedDB.eventStore : IndexedDB.errorStore,
-            data
+            data,
           );
         });
     } catch (error) {
@@ -536,15 +536,15 @@ export class Hazelnut {
 }
 
 interface HazelnutInstanceHelper {
-  (options?: HazelnutOptions): Hazelnut;
+  (): Hazelnut;
   init: (options: HazelnutOptions) => Hazelnut;
   track: (event: string, data?: any) => void;
   error: (error: Error) => void;
   terminate: () => void;
 }
 
-export const hazelnut: HazelnutInstanceHelper = (options?: HazelnutOptions) => {
-  return Hazelnut.getInstance(options);
+export const hazelnut: HazelnutInstanceHelper = () => {
+  return Hazelnut.getInstance();
 };
 
 hazelnut.track = (event: string, data?: any) => {
