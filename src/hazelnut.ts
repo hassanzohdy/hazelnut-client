@@ -135,7 +135,7 @@ export class Hazelnut {
     data: any;
   }[] = [];
 
-  protected options: HazelnutOptions;
+  protected options: HazelnutOptions = {} as HazelnutOptions;
 
   /**
    * Constructor
