@@ -1,4 +1,3 @@
-import cache from "@mongez/cache";
 import { encrypt } from "@mongez/encryption";
 import Endpoint from "@mongez/http";
 import { GenericObject, Random } from "@mongez/reinforcements";
@@ -19,6 +18,8 @@ class IndexedDB {
   static errorStore = "errors";
 
   static openDB() {
+    // ignore DB for now
+    return;
     return new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open(IndexedDB.dbName, IndexedDB.dbVersion);
       request.onerror = (event) => {
@@ -46,6 +47,8 @@ class IndexedDB {
   }
 
   static async save(storeName: string, data: any) {
+    // ignore DB for now
+    return;
     const db = await IndexedDB.openDB();
     return new Promise<void>((resolve, reject) => {
       const transaction = db.transaction([storeName], "readwrite");
@@ -58,6 +61,8 @@ class IndexedDB {
   }
 
   static async getAll(storeName: string) {
+    // ignore DB for now
+    return;
     const db = await IndexedDB.openDB();
     return new Promise<any[]>((resolve, reject) => {
       const transaction = db.transaction([storeName], "readonly");
@@ -72,6 +77,8 @@ class IndexedDB {
   }
 
   static async delete(storeName: string, id: number) {
+    // ignore DB for now
+    return;
     const db = await IndexedDB.openDB();
     return new Promise<void>((resolve, reject) => {
       const transaction = db.transaction([storeName], "readwrite");
@@ -128,28 +135,20 @@ export class Hazelnut {
     data: any;
   }[] = [];
 
+  protected options: HazelnutOptions;
+
   /**
    * Constructor
    * @param options Configuration options for Hazelnut
    */
-  public constructor(protected options: HazelnutOptions) {
-    if (this.options.apiUrl) {
-      this.apiUrl = this.options.apiUrl;
-    }
-
-    this.request = new Endpoint({
-      baseURL: this.apiUrl,
-    });
-
-    this.boot();
-  }
+  private constructor() {}
 
   /**
    * Get the singleton instance of Hazelnut
    */
-  public static getInstance(options?: HazelnutOptions) {
+  public static getInstance() {
     if (!Hazelnut.instance) {
-      Hazelnut.instance = new Hazelnut(options!);
+      Hazelnut.instance = new Hazelnut();
     }
 
     return Hazelnut.instance;
@@ -159,13 +158,23 @@ export class Hazelnut {
    * Configure the Hazelnut instance
    */
   public static init(options: HazelnutOptions) {
-    return Hazelnut.getInstance(options);
+    return Hazelnut.getInstance().configure(options);
   }
 
   /**
    * Initialize the tracker
    */
-  protected boot() {
+  public configure(options: HazelnutOptions) {
+    this.options = options;
+
+    if (this.options?.apiUrl) {
+      this.apiUrl = this.options.apiUrl;
+    }
+
+    this.request = new Endpoint({
+      baseURL: this.apiUrl,
+    });
+
     this.prepareSessionId();
 
     if (this.options.captureUncaughtErrors) {
@@ -179,6 +188,8 @@ export class Hazelnut {
     window.addEventListener("online", this.retryFailedRequests.bind(this));
     // Start periodic checks
     this.startPeriodicCheck();
+
+    return this;
   }
 
   protected startPeriodicCheck() {
@@ -214,8 +225,8 @@ export class Hazelnut {
 
     this.track("session.ended");
 
-    cache.remove("hzlsid");
-    cache.remove("hzlsat");
+    localStorage.removeItem("hzlsid");
+    localStorage.removeItem("hzlsat");
 
     this.lastActivity = undefined;
   }
@@ -549,5 +560,5 @@ hazelnut.terminate = () => {
 };
 
 hazelnut.init = (options: HazelnutOptions) => {
-  return Hazelnut.getInstance(options);
+  return Hazelnut.getInstance().configure(options);
 };
