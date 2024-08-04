@@ -1,7 +1,7 @@
 import {
   SourceMapConsumer,
   type RawSourceMap,
-} from "source-map/dist/source-map.min.js";
+} from "source-map/dist/source-map.js";
 
 const sourcemapUrls: Record<string, RawSourceMap> = {};
 const fetchingUrls: string[] = [];
