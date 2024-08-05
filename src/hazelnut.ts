@@ -1,23 +1,22 @@
-/* eslint-disable no-await-in-loop */
-import Endpoint from '@mongez/http';
-import { GenericObject, Random } from '@mongez/reinforcements';
-// eslint-disable-next-line import/no-extraneous-dependencies
-import ErrorStackParser from 'error-stack-parser';
+import Endpoint from "@mongez/http";
+import { encrypt } from "@mongez/encryption";
+import { GenericObject, Random } from "@mongez/reinforcements";
+import ErrorStackParser from "error-stack-parser";
 import {
   captureGlobalErrors,
   detectPageLeave,
   getBrowserInfo,
   getOperatingSystemInfo,
-} from './collect-browser-data';
-import { IndexedDB } from './db';
-import { parseStackTraceFromSourcemap } from './error-stack-sourcemap';
-import { HazelnutOptions } from './types';
+} from "./collect-browser-data";
+import { IndexedDB } from "./db";
+import { parseStackTraceFromSourcemap } from "./error-stack-sourcemap";
+import { HazelnutOptions } from "./types";
 
 export class Hazelnut {
   /**
    * API URL
    */
-  protected apiUrl = 'https://api.hazelnut.mentoor.io';
+  protected apiUrl = "https://api.hazelnut.mentoor.io";
 
   /**
    * API Request
@@ -53,7 +52,7 @@ export class Hazelnut {
    * Queue to store events and errors until the Hazelnut instance is initialized
    */
   protected queue: {
-    type: 'event' | 'error';
+    type: "event" | "error";
     data: any;
   }[] = [];
 
@@ -91,10 +90,6 @@ export class Hazelnut {
   public configure(options: HazelnutOptions) {
     this.options = options;
 
-    if (this.options?.apiUrl) {
-      this.apiUrl = this.options.apiUrl;
-    }
-
     this.request = new Endpoint({
       baseURL: this.apiUrl,
     });
@@ -109,7 +104,7 @@ export class Hazelnut {
     detectPageLeave(this);
 
     this.retryFailedRequests();
-    window.addEventListener('online', this.retryFailedRequests.bind(this));
+    window.addEventListener("online", this.retryFailedRequests.bind(this));
     // Start periodic checks
     this.startPeriodicCheck();
 
@@ -157,10 +152,10 @@ export class Hazelnut {
       return;
     }
 
-    this.track('session.ended');
+    this.track("session.ended");
 
-    localStorage.removeItem('hzlsid');
-    localStorage.removeItem('hzlsat');
+    localStorage.removeItem("hzlsid");
+    localStorage.removeItem("hzlsat");
 
     this.lastActivity = undefined;
   }
@@ -195,10 +190,10 @@ export class Hazelnut {
     // Process the queue
     for (const [key, item] of this.queue.entries()) {
       try {
-        if (item.type === 'event') {
-          await this.send('event', item.data);
+        if (item.type === "event") {
+          await this.send("event", item.data);
         } else {
-          await this.send('error', item.data);
+          await this.send("error", item.data);
         }
 
         // remove the item from queue
@@ -218,7 +213,10 @@ export class Hazelnut {
     const stack = ErrorStackParser.parse(error);
 
     const finalStack = this.options.sourcemap
-      ? await parseStackTraceFromSourcemap(stack, this.options.sourceMapUrlParser)
+      ? await parseStackTraceFromSourcemap(
+          stack,
+          this.options.sourceMapUrlParser
+        )
       : stack;
 
     const errorData = {
@@ -231,7 +229,7 @@ export class Hazelnut {
 
     if (!this.initialized) {
       this.queue.push({
-        type: 'error',
+        type: "error",
         data: errorData,
       });
 
@@ -242,29 +240,33 @@ export class Hazelnut {
 
     this.updateLastActivity();
 
-    this.send('error', errorData);
+    this.send("error", errorData);
   }
 
   /**
    * Send the given data
    */
-  protected async send(type: 'event' | 'error', data: GenericObject) {
+  protected async send(type: "event" | "error", data: GenericObject) {
     try {
-      const path = type === 'event' ? '/events/collect' : '/errors/collect';
+      const path = type === "event" ? "/events/collect" : "/errors/collect";
 
-      // const encryptedData: string = encrypt(data, this.options.encryptionKey || 'hazelnutKey');
+      const encryptedData: string = encrypt(
+        data,
+        this.options.encryptionKey || "hazelnutKey"
+      );
 
-      // const payload: Record<string, any> = {
-      //   p: encryptedData, // p for payload
-      // };
-
-      const payload = data;
+      const payload: Record<string, any> = {
+        p: encryptedData, // p for payload
+      };
 
       this.request.post(path, payload).catch(() => {
-        IndexedDB.save(type === 'event' ? IndexedDB.eventStore : IndexedDB.errorStore, data);
+        IndexedDB.save(
+          type === "event" ? IndexedDB.eventStore : IndexedDB.errorStore,
+          data
+        );
       });
     } catch (error) {
-      this.consoleErrorMethod('Error sending data:', error);
+      this.consoleErrorMethod("Error sending data:", error);
     }
   }
 
@@ -276,14 +278,14 @@ export class Hazelnut {
     const warningData = {
       title: error.message,
       trace: error.stack,
-      severity: 'warning',
+      severity: "warning",
       stack: ErrorStackParser.parse(error),
       ...this.prepareData(),
     };
 
     if (!this.initialized) {
       this.queue.push({
-        type: 'error',
+        type: "error",
         data: warningData,
       });
       return;
@@ -291,7 +293,7 @@ export class Hazelnut {
 
     this.updateLastActivity();
 
-    this.send('error', warningData);
+    this.send("error", warningData);
   }
 
   /**
@@ -311,7 +313,7 @@ export class Hazelnut {
 
     if (!this.initialized) {
       this.queue.push({
-        type: 'event',
+        type: "event",
         data: eventData,
       });
 
@@ -321,9 +323,9 @@ export class Hazelnut {
     this.updateLastActivity();
 
     try {
-      await this.send('event', eventData);
+      await this.send("event", eventData);
     } catch (error) {
-      this.consoleErrorMethod('Error tracking event:', error);
+      this.consoleErrorMethod("Error tracking event:", error);
       IndexedDB.save(IndexedDB.eventStore, eventData);
     }
   }
@@ -333,8 +335,8 @@ export class Hazelnut {
    */
   protected async prepareSessionId() {
     try {
-      this.sessionId = localStorage.getItem('hzlsid') || '';
-      this.lastActivity = Number(localStorage.getItem('hzlsat')) || 0;
+      this.sessionId = localStorage.getItem("hzlsid") || "";
+      this.lastActivity = Number(localStorage.getItem("hzlsat")) || 0;
 
       const hasSession = !!this.sessionId;
 
@@ -348,12 +350,12 @@ export class Hazelnut {
       // if session already exists and we are calling the configure method
       // it means the visitor has reloaded the page
       if (hasSession) {
-        this.track('app.reload');
+        this.track("app.reload");
       }
 
       this.checkSessionTimeoutInterval();
     } catch (error) {
-      this.consoleErrorMethod('Error preparing session ID:', error);
+      this.consoleErrorMethod("Error preparing session ID:", error);
     }
   }
 
@@ -396,7 +398,7 @@ export class Hazelnut {
     const timeout = this.options.sessionTimeout || 30 * 60 * 1000;
 
     if (Date.now() - this.lastActivity > timeout) {
-      await this.track('session.timeout');
+      await this.track("session.timeout");
       await this.generateSessionId(); // Ensure this is awaited
     }
 
@@ -405,7 +407,7 @@ export class Hazelnut {
       const now = new Date();
 
       if (lastActivity.getDate() !== now.getDate()) {
-        await this.track('session.timeout');
+        await this.track("session.timeout");
         await this.generateSessionId(); // Ensure this is awaited
       }
     }
@@ -417,10 +419,10 @@ export class Hazelnut {
   protected async generateSessionId() {
     try {
       this.sessionId = Random.string(64);
-      await this.track('session.started');
-      localStorage.setItem('hzlsid', this.sessionId);
+      await this.track("session.started");
+      localStorage.setItem("hzlsid", this.sessionId);
     } catch (error) {
-      this.consoleErrorMethod('Error generating session ID:', error);
+      this.consoleErrorMethod("Error generating session ID:", error);
     }
   }
 
@@ -429,7 +431,7 @@ export class Hazelnut {
    */
   protected updateLastActivity() {
     this.lastActivity = Date.now();
-    localStorage.setItem('hzlsat', this.lastActivity.toString());
+    localStorage.setItem("hzlsat", this.lastActivity.toString());
   }
 
   /**
@@ -442,20 +444,20 @@ export class Hazelnut {
       version: this.options.version,
       apiKey: this.options.apiKey,
       timestamp: Date.now(),
-      environment: this.options.environment || 'production',
+      environment: this.options.environment || "production",
       user: this.options.user ? this.options.user : undefined,
       browser: getBrowserInfo(),
       language: navigator.language,
       os: getOperatingSystemInfo(),
       ui: {
-        darkMode: window.matchMedia('(prefers-color-scheme: dark)').matches,
+        darkMode: window.matchMedia("(prefers-color-scheme: dark)").matches,
         screen: {
           width: window.screen.width,
           height: window.screen.height,
         },
-        displayMode: window.matchMedia('(orientation: portrait)').matches
-          ? 'portrait'
-          : 'landscape',
+        displayMode: window.matchMedia("(orientation: portrait)").matches
+          ? "portrait"
+          : "landscape",
       },
       request: {
         title: document.title,
