@@ -1,100 +1,23 @@
-import { encrypt } from "@mongez/encryption";
-import Endpoint from "@mongez/http";
-import { GenericObject, Random } from "@mongez/reinforcements";
-import ErrorStackParser from "error-stack-parser";
+/* eslint-disable no-await-in-loop */
+import Endpoint from '@mongez/http';
+import { GenericObject, Random } from '@mongez/reinforcements';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import ErrorStackParser from 'error-stack-parser';
 import {
   captureGlobalErrors,
   detectPageLeave,
   getBrowserInfo,
   getOperatingSystemInfo,
-} from "./collect-browser-data";
-import { parseStackTraceFromSourcemap } from "./error-stack-sourcemap";
-import { HazelnutOptions } from "./types";
-
-class IndexedDB {
-  static dbName = "hazelnutDB";
-  static dbVersion = 1;
-  static eventStore = "events";
-  static errorStore = "errors";
-
-  static openDB() {
-    // ignore DB for now
-    return;
-    // return new Promise<IDBDatabase>((resolve, reject) => {
-    //   const request = indexedDB.open(IndexedDB.dbName, IndexedDB.dbVersion);
-    //   request.onerror = event => {
-    //     reject(`Error opening IndexedDB: ${event.target}`);
-    //   };
-    //   request.onsuccess = event => {
-    //     resolve((event.target as IDBOpenDBRequest).result);
-    //   };
-    //   request.onupgradeneeded = event => {
-    //     const db = (event.target as IDBOpenDBRequest).result;
-    //     if (!db.objectStoreNames.contains(IndexedDB.eventStore)) {
-    //       db.createObjectStore(IndexedDB.eventStore, {
-    //         keyPath: "id",
-    //         autoIncrement: true,
-    //       });
-    //     }
-    //     if (!db.objectStoreNames.contains(IndexedDB.errorStore)) {
-    //       db.createObjectStore(IndexedDB.errorStore, {
-    //         keyPath: "id",
-    //         autoIncrement: true,
-    //       });
-    //     }
-    //   };
-    // });
-  }
-
-  static async save(storeName: string, data: any) {
-    // ignore DB for now
-    return;
-    // const db = await IndexedDB.openDB();
-    // return new Promise<void>((resolve, reject) => {
-    //   const transaction = db.transaction([storeName], "readwrite");
-    //   transaction.oncomplete = () => resolve();
-    //   transaction.onerror = event =>
-    //     reject(`Error saving data: ${event.target}`);
-    //   const store = transaction.objectStore(storeName);
-    //   store.add(data);
-    // });
-  }
-
-  static async getAll(storeName: string) {
-    // ignore DB for now
-    return;
-    // const db = await IndexedDB.openDB();
-    // return new Promise<any[]>((resolve, reject) => {
-    //   const transaction = db.transaction([storeName], "readonly");
-    //   transaction.onerror = event =>
-    //     reject(`Error fetching data: ${event.target}`);
-    //   const store = transaction.objectStore(storeName);
-    //   const request = store.getAll();
-    //   request.onsuccess = () => resolve(request.result);
-    //   request.onerror = event => reject(`Error fetching data: ${event.target}`);
-    // });
-  }
-
-  static async delete(storeName: string, id: number) {
-    // ignore DB for now
-    return;
-    // const db = await IndexedDB.openDB();
-    // return new Promise<void>((resolve, reject) => {
-    //   const transaction = db.transaction([storeName], "readwrite");
-    //   transaction.oncomplete = () => resolve();
-    //   transaction.onerror = event =>
-    //     reject(`Error deleting data: ${event.target}`);
-    //   const store = transaction.objectStore(storeName);
-    //   store.delete(id);
-    // });
-  }
-}
+} from './collect-browser-data';
+import { IndexedDB } from './db';
+import { parseStackTraceFromSourcemap } from './error-stack-sourcemap';
+import { HazelnutOptions } from './types';
 
 export class Hazelnut {
   /**
    * API URL
    */
-  protected apiUrl = "https://api.hazelnut.mentoor.io";
+  protected apiUrl = 'https://api.hazelnut.mentoor.io';
 
   /**
    * API Request
@@ -130,7 +53,7 @@ export class Hazelnut {
    * Queue to store events and errors until the Hazelnut instance is initialized
    */
   protected queue: {
-    type: "event" | "error";
+    type: 'event' | 'error';
     data: any;
   }[] = [];
 
@@ -140,7 +63,9 @@ export class Hazelnut {
    * Constructor
    * @param options Configuration options for Hazelnut
    */
-  private constructor() {}
+  private constructor() {
+    //
+  }
 
   /**
    * Get the singleton instance of Hazelnut
@@ -184,7 +109,7 @@ export class Hazelnut {
     detectPageLeave(this);
 
     this.retryFailedRequests();
-    window.addEventListener("online", this.retryFailedRequests.bind(this));
+    window.addEventListener('online', this.retryFailedRequests.bind(this));
     // Start periodic checks
     this.startPeriodicCheck();
 
@@ -205,12 +130,22 @@ export class Hazelnut {
   protected overrideConsoleError() {
     console.error = (...args: any[]) => {
       // Call the original console.error method
-      console.log("err", args);
 
       this.consoleErrorMethod.apply(console, args);
 
+      let errorInstance: Error | undefined;
+
+      for (const arg of args) {
+        if (arg instanceof Error) {
+          errorInstance = arg;
+          break;
+        }
+      }
+
+      if (!errorInstance) return;
+
       // Track the error using the Hazelnut error method
-      this.error(args[0]);
+      this.error(errorInstance);
     };
   }
 
@@ -222,10 +157,10 @@ export class Hazelnut {
       return;
     }
 
-    this.track("session.ended");
+    this.track('session.ended');
 
-    localStorage.removeItem("hzlsid");
-    localStorage.removeItem("hzlsat");
+    localStorage.removeItem('hzlsid');
+    localStorage.removeItem('hzlsat');
 
     this.lastActivity = undefined;
   }
@@ -234,11 +169,9 @@ export class Hazelnut {
    * Retry sending failed requests from IndexedDB
    */
   protected async retryFailedRequests() {
-    return;
     // if (navigator.onLine) {
     //   const failedEvents = await IndexedDB.getAll(IndexedDB.eventStore);
     //   const failedErrors = await IndexedDB.getAll(IndexedDB.errorStore);
-
     //   for (const event of failedEvents) {
     //     try {
     //       await this.send("event", event);
@@ -247,7 +180,6 @@ export class Hazelnut {
     //       this.consoleErrorMethod("Retrying failed event:", error);
     //     }
     //   }
-
     //   for (const error of failedErrors) {
     //     try {
     //       await this.send("error", error);
@@ -263,10 +195,10 @@ export class Hazelnut {
     // Process the queue
     for (const [key, item] of this.queue.entries()) {
       try {
-        if (item.type === "event") {
-          await this.send("event", item.data);
+        if (item.type === 'event') {
+          await this.send('event', item.data);
         } else {
-          await this.send("error", item.data);
+          await this.send('error', item.data);
         }
 
         // remove the item from queue
@@ -286,10 +218,7 @@ export class Hazelnut {
     const stack = ErrorStackParser.parse(error);
 
     const finalStack = this.options.sourcemap
-      ? await parseStackTraceFromSourcemap(
-          stack,
-          this.options.sourceMapUrlParser,
-        )
+      ? await parseStackTraceFromSourcemap(stack, this.options.sourceMapUrlParser)
       : stack;
 
     const errorData = {
@@ -302,42 +231,40 @@ export class Hazelnut {
 
     if (!this.initialized) {
       this.queue.push({
-        type: "error",
+        type: 'error',
         data: errorData,
       });
 
       return;
     }
 
+    console.log(errorData);
+
     this.updateLastActivity();
 
-    this.send("error", errorData);
+    this.send('error', errorData);
   }
 
   /**
    * Send the given data
    */
-  protected async send(type: "event" | "error", data: GenericObject) {
+  protected async send(type: 'event' | 'error', data: GenericObject) {
     try {
-      const path = type === "event" ? "/events/collect" : "/errors/collect";
+      const path = type === 'event' ? '/events/collect' : '/errors/collect';
 
-      const encryptedData: string = encrypt(
-        data,
-        this.options.encryptionKey || "hazelnutKey",
-      );
+      // const encryptedData: string = encrypt(data, this.options.encryptionKey || 'hazelnutKey');
 
-      this.request
-        .post(path, {
-          p: encryptedData, // p for payload
-        })
-        .catch(() => {
-          IndexedDB.save(
-            type === "event" ? IndexedDB.eventStore : IndexedDB.errorStore,
-            data,
-          );
-        });
+      // const payload: Record<string, any> = {
+      //   p: encryptedData, // p for payload
+      // };
+
+      const payload = data;
+
+      this.request.post(path, payload).catch(() => {
+        IndexedDB.save(type === 'event' ? IndexedDB.eventStore : IndexedDB.errorStore, data);
+      });
     } catch (error) {
-      this.consoleErrorMethod("Error sending data:", error);
+      this.consoleErrorMethod('Error sending data:', error);
     }
   }
 
@@ -349,14 +276,14 @@ export class Hazelnut {
     const warningData = {
       title: error.message,
       trace: error.stack,
-      severity: "warning",
+      severity: 'warning',
       stack: ErrorStackParser.parse(error),
       ...this.prepareData(),
     };
 
     if (!this.initialized) {
       this.queue.push({
-        type: "error",
+        type: 'error',
         data: warningData,
       });
       return;
@@ -364,7 +291,7 @@ export class Hazelnut {
 
     this.updateLastActivity();
 
-    this.send("error", warningData);
+    this.send('error', warningData);
   }
 
   /**
@@ -384,7 +311,7 @@ export class Hazelnut {
 
     if (!this.initialized) {
       this.queue.push({
-        type: "event",
+        type: 'event',
         data: eventData,
       });
 
@@ -394,9 +321,9 @@ export class Hazelnut {
     this.updateLastActivity();
 
     try {
-      await this.send("event", eventData);
+      await this.send('event', eventData);
     } catch (error) {
-      this.consoleErrorMethod("Error tracking event:", error);
+      this.consoleErrorMethod('Error tracking event:', error);
       IndexedDB.save(IndexedDB.eventStore, eventData);
     }
   }
@@ -406,18 +333,27 @@ export class Hazelnut {
    */
   protected async prepareSessionId() {
     try {
-      this.sessionId = localStorage.getItem("hzlsid") || "";
-      this.lastActivity = Number(localStorage.getItem("hzlsat")) || 0;
+      this.sessionId = localStorage.getItem('hzlsid') || '';
+      this.lastActivity = Number(localStorage.getItem('hzlsat')) || 0;
 
-      if (!this.sessionId) {
+      const hasSession = !!this.sessionId;
+
+      if (!hasSession) {
         await this.generateSessionId();
       }
 
       this.markAsInitialized();
 
+      // because generateSessionId will trigger `session.started` event
+      // if session already exists and we are calling the configure method
+      // it means the visitor has reloaded the page
+      if (hasSession) {
+        this.track('app.reload');
+      }
+
       this.checkSessionTimeoutInterval();
     } catch (error) {
-      this.consoleErrorMethod("Error preparing session ID:", error);
+      this.consoleErrorMethod('Error preparing session ID:', error);
     }
   }
 
@@ -460,7 +396,7 @@ export class Hazelnut {
     const timeout = this.options.sessionTimeout || 30 * 60 * 1000;
 
     if (Date.now() - this.lastActivity > timeout) {
-      await this.track("session.timeout");
+      await this.track('session.timeout');
       await this.generateSessionId(); // Ensure this is awaited
     }
 
@@ -469,7 +405,7 @@ export class Hazelnut {
       const now = new Date();
 
       if (lastActivity.getDate() !== now.getDate()) {
-        await this.track("session.timeout");
+        await this.track('session.timeout');
         await this.generateSessionId(); // Ensure this is awaited
       }
     }
@@ -481,10 +417,10 @@ export class Hazelnut {
   protected async generateSessionId() {
     try {
       this.sessionId = Random.string(64);
-      await this.track("session.started");
-      localStorage.setItem("hzlsid", this.sessionId);
+      await this.track('session.started');
+      localStorage.setItem('hzlsid', this.sessionId);
     } catch (error) {
-      this.consoleErrorMethod("Error generating session ID:", error);
+      this.consoleErrorMethod('Error generating session ID:', error);
     }
   }
 
@@ -493,7 +429,7 @@ export class Hazelnut {
    */
   protected updateLastActivity() {
     this.lastActivity = Date.now();
-    localStorage.setItem("hzlsat", this.lastActivity.toString());
+    localStorage.setItem('hzlsat', this.lastActivity.toString());
   }
 
   /**
@@ -506,20 +442,20 @@ export class Hazelnut {
       version: this.options.version,
       apiKey: this.options.apiKey,
       timestamp: Date.now(),
-      environment: this.options.environment || "production",
+      environment: this.options.environment || 'production',
       user: this.options.user ? this.options.user : undefined,
       browser: getBrowserInfo(),
       language: navigator.language,
       os: getOperatingSystemInfo(),
       ui: {
-        darkMode: window.matchMedia("(prefers-color-scheme: dark)").matches,
+        darkMode: window.matchMedia('(prefers-color-scheme: dark)').matches,
         screen: {
           width: window.screen.width,
           height: window.screen.height,
         },
-        displayMode: window.matchMedia("(orientation: portrait)").matches
-          ? "portrait"
-          : "landscape",
+        displayMode: window.matchMedia('(orientation: portrait)').matches
+          ? 'portrait'
+          : 'landscape',
       },
       request: {
         title: document.title,
@@ -539,7 +475,7 @@ interface HazelnutInstanceHelper {
   (): Hazelnut;
   init: (options: HazelnutOptions) => Hazelnut;
   track: (event: string, data?: any) => void;
-  error: (error: Error) => void;
+  error: (error: Error, data?: any) => void;
   terminate: () => void;
 }
 

@@ -54,7 +54,7 @@ export type HazelnutOptions = {
   /**
    * Application environment
    */
-  environment?: "development" | "production" | "staging";
+  environment?: 'development' | 'production' | 'staging' | 'local';
   /**
    * Enable sourcemap
    * If true, errors will be mapped to the original source code
