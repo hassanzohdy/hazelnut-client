@@ -210,6 +210,23 @@ export class Hazelnut {
    * @param error Error object or message to log
    */
   public async error(error: Error, data?: GenericObject) {
+    return this.sendError(error, data);
+  }
+
+  /**
+   * Log an uncaught error
+   */
+  public uncaughtError(error: Error, data?: GenericObject) {
+    return this.sendError(error, data, {
+      uncaught: true,
+    });
+  }
+
+  protected async sendError(
+    error: Error,
+    data?: GenericObject,
+    extraData?: GenericObject
+  ) {
     const stack = ErrorStackParser.parse(error);
 
     const finalStack = this.options.sourcemap
@@ -224,6 +241,7 @@ export class Hazelnut {
       trace: error.stack,
       stack: finalStack,
       data,
+      ...extraData,
       ...this.prepareData(),
     };
 
