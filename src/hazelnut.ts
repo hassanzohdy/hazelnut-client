@@ -236,8 +236,6 @@ export class Hazelnut {
       return;
     }
 
-    console.log(errorData);
-
     this.updateLastActivity();
 
     this.send("error", errorData);
