@@ -247,6 +247,10 @@ export class Hazelnut {
     extraData?: GenericObject
   ) {
     try {
+      if (error instanceof Error === false) {
+        error = new Error(String(error));
+      }
+
       const stack = this.parseStack(error);
 
       const finalStack = this.options.sourcemap
