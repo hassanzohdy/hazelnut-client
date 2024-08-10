@@ -229,18 +229,30 @@ export class Hazelnut {
     });
   }
 
+  protected parseStack(error: Error) {
+    if (error instanceof Error) {
+      try {
+        return ErrorStackParser.parse(error);
+      } catch {
+        return [];
+      }
+    }
+
+    return [];
+  }
+
   protected async sendError(
     error: Error,
     data?: GenericObject,
-    extraData?: GenericObject,
+    extraData?: GenericObject
   ) {
     try {
-      const stack = ErrorStackParser.parse(error);
+      const stack = this.parseStack(error);
 
       const finalStack = this.options.sourcemap
         ? await parseStackTraceFromSourcemap(
             stack,
-            this.options.sourceMapUrlParser,
+            this.options.sourceMapUrlParser
           )
         : stack;
 
@@ -269,7 +281,7 @@ export class Hazelnut {
       this.send("error", {
         title: error.message,
         trace: error.stack,
-        stack: ErrorStackParser.parse(error) || [],
+        stack: this.parseStack(error),
         ...this.prepareData(),
       });
     }
@@ -284,7 +296,7 @@ export class Hazelnut {
 
       const encryptedData: string = encrypt(
         data,
-        this.options.encryptionKey || "hazelnutKey",
+        this.options.encryptionKey || "hazelnutKey"
       );
 
       const payload: Record<string, any> = {
@@ -294,7 +306,7 @@ export class Hazelnut {
       this.request.post(path, payload).catch(() => {
         IndexedDB.save(
           type === "event" ? IndexedDB.eventStore : IndexedDB.errorStore,
-          data,
+          data
         );
       });
     } catch (error) {
