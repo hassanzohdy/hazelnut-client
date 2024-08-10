@@ -5,7 +5,7 @@ const fetchingUrls: string[] = [];
 
 export async function parseStackTraceFromSourcemap(
   stack: StackFrame[],
-  sourcemapUrlParser: (file: string) => string = (file) => file + ".map"
+  sourcemapUrlParser: (file: string) => string = file => file + ".map",
 ): Promise<StackFrame[]> {
   // first off get all file names urls to be fetched
   for (const callSite of stack) {
@@ -24,7 +24,7 @@ export async function parseStackTraceFromSourcemap(
   if (fetchingUrls.length > 0) {
     try {
       await loadSourcemapFiles(
-        fetchingUrls.map((file) => sourcemapUrlParser(file))
+        fetchingUrls.map(file => sourcemapUrlParser(file)),
       );
 
       // clear the fetching urls
@@ -66,13 +66,13 @@ export async function parseStackTraceFromSourcemap(
 
 export async function loadSourcemapFiles(fileNames: string[]) {
   return await Promise.all(
-    fileNames.map(async (fileName) => {
+    fileNames.map(async fileName => {
       if (sourcemapUrls[fileName]) return sourcemapUrls[fileName];
 
       const response = await fetch(fileName);
       const text = await response.json();
       sourcemapUrls[fileName] = text;
       return text;
-    })
+    }),
   );
 }

@@ -1,11 +1,11 @@
 export class IndexedDB {
-  static dbName = 'hazelnutDB';
+  static dbName = "hazelnutDB";
 
   static dbVersion = 1;
 
-  static eventStore = 'events';
+  static eventStore = "events";
 
-  static errorStore = 'errors';
+  static errorStore = "errors";
 
   public static openDB(): void {
     // ignore DB for now

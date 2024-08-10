@@ -1,10 +1,11 @@
-import Endpoint from "@mongez/http";
 import { encrypt } from "@mongez/encryption";
+import Endpoint from "@mongez/http";
 import { GenericObject, Random } from "@mongez/reinforcements";
 import ErrorStackParser from "error-stack-parser";
 import {
   captureGlobalErrors,
   detectPageLeave,
+  detectPageNavigation,
   getBrowserInfo,
   getOperatingSystemInfo,
 } from "./collect-browser-data";
@@ -101,7 +102,13 @@ export class Hazelnut {
       this.overrideConsoleError();
     }
 
-    detectPageLeave(this);
+    if (this.options?.autoCollect?.close ?? true) {
+      detectPageLeave(this);
+    }
+
+    if (this.options?.autoCollect?.navigation ?? true) {
+      detectPageNavigation(this);
+    }
 
     this.retryFailedRequests();
     window.addEventListener("online", this.retryFailedRequests.bind(this));
@@ -225,38 +232,47 @@ export class Hazelnut {
   protected async sendError(
     error: Error,
     data?: GenericObject,
-    extraData?: GenericObject
+    extraData?: GenericObject,
   ) {
-    const stack = ErrorStackParser.parse(error);
+    try {
+      const stack = ErrorStackParser.parse(error);
 
-    const finalStack = this.options.sourcemap
-      ? await parseStackTraceFromSourcemap(
-          stack,
-          this.options.sourceMapUrlParser
-        )
-      : stack;
+      const finalStack = this.options.sourcemap
+        ? await parseStackTraceFromSourcemap(
+            stack,
+            this.options.sourceMapUrlParser,
+          )
+        : stack;
 
-    const errorData = {
-      title: error.message,
-      trace: error.stack,
-      stack: finalStack,
-      data,
-      ...extraData,
-      ...this.prepareData(),
-    };
+      const errorData = {
+        title: error.message,
+        trace: error.stack,
+        stack: finalStack,
+        data,
+        ...extraData,
+        ...this.prepareData(),
+      };
 
-    if (!this.initialized) {
-      this.queue.push({
-        type: "error",
-        data: errorData,
+      if (!this.initialized) {
+        this.queue.push({
+          type: "error",
+          data: errorData,
+        });
+
+        return;
+      }
+
+      this.updateLastActivity();
+
+      this.send("error", errorData);
+    } catch (error: any) {
+      this.send("error", {
+        title: error.message,
+        trace: error.stack,
+        stack: ErrorStackParser.parse(error) || [],
+        ...this.prepareData(),
       });
-
-      return;
     }
-
-    this.updateLastActivity();
-
-    this.send("error", errorData);
   }
 
   /**
@@ -268,7 +284,7 @@ export class Hazelnut {
 
       const encryptedData: string = encrypt(
         data,
-        this.options.encryptionKey || "hazelnutKey"
+        this.options.encryptionKey || "hazelnutKey",
       );
 
       const payload: Record<string, any> = {
@@ -278,7 +294,7 @@ export class Hazelnut {
       this.request.post(path, payload).catch(() => {
         IndexedDB.save(
           type === "event" ? IndexedDB.eventStore : IndexedDB.errorStore,
-          data
+          data,
         );
       });
     } catch (error) {

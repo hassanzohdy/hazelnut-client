@@ -18,6 +18,24 @@ export function detectPageLeave(hazelnut: Hazelnut): void {
   });
 }
 
+let previousPath = window.location.pathname;
+
+/**
+ * Log page navigation
+ */
+export function detectPageNavigation(hazelnut: Hazelnut): void {
+  window.addEventListener("popstate", () => {
+    const currentPath = window.location.pathname;
+
+    hazelnut.track("page.view", {
+      from: previousPath,
+      to: currentPath,
+    });
+
+    previousPath = currentPath;
+  });
+}
+
 export function getBrowserInfo(): { name: string; version: string } {
   const { userAgent } = navigator;
   let browserName;
@@ -140,6 +158,6 @@ export function captureGlobalErrors(hazelnut: Hazelnut): void {
           reason: event.reason,
         });
       }
-    }
+    },
   );
 }

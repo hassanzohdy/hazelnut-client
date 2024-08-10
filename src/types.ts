@@ -21,6 +21,23 @@ export type HazelnutOptions = {
    */
   user?: UserInfo;
   /**
+   * Determine what to be auto collected
+   */
+  autoCollect?: {
+    /**
+     * Collect when user navigates to a new page
+     *
+     * @default true
+     */
+    navigation?: boolean;
+    /**
+     * Collect when user closes the web app
+     *
+     * @default true
+     */
+    close?: boolean;
+  };
+  /**
    * Capture unhandled errors
    *
    * @default true
@@ -54,7 +71,7 @@ export type HazelnutOptions = {
   /**
    * Application environment
    */
-  environment?: 'development' | 'production' | 'staging' | 'local';
+  environment?: "development" | "production" | "staging" | "local";
   /**
    * Enable sourcemap
    * If true, errors will be mapped to the original source code
