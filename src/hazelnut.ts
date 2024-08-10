@@ -278,6 +278,8 @@ export class Hazelnut {
 
       this.send("error", errorData);
     } catch (error: any) {
+      if (!error) return;
+
       this.send("error", {
         title: error.message,
         trace: error.stack,
