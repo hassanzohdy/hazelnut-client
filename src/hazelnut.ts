@@ -1,7 +1,6 @@
 import { encrypt } from "@mongez/encryption";
 import Endpoint from "@mongez/http";
 import { GenericObject, Random } from "@mongez/reinforcements";
-import ErrorStackParser from "error-stack-parser";
 import {
   captureGlobalErrors,
   detectPageLeave,
@@ -10,7 +9,6 @@ import {
   getOperatingSystemInfo,
 } from "./collect-browser-data";
 import { IndexedDB } from "./db";
-import { parseStackTraceFromSourcemap } from "./error-stack-sourcemap";
 import { HazelnutOptions } from "./types";
 
 export class Hazelnut {
@@ -229,18 +227,6 @@ export class Hazelnut {
     });
   }
 
-  protected parseStack(error: Error) {
-    if (error instanceof Error) {
-      try {
-        return ErrorStackParser.parse(error);
-      } catch {
-        return [];
-      }
-    }
-
-    return [];
-  }
-
   protected async sendError(
     error: Error,
     data?: GenericObject,
@@ -251,19 +237,9 @@ export class Hazelnut {
         error = new Error(String(error));
       }
 
-      const stack = this.parseStack(error);
-
-      const finalStack = this.options.sourcemap
-        ? await parseStackTraceFromSourcemap(
-            stack,
-            this.options.sourceMapUrlParser
-          )
-        : stack;
-
       const errorData = {
         title: error.message,
         trace: error.stack,
-        stack: finalStack,
         data,
         ...extraData,
         ...this.prepareData(),
@@ -287,7 +263,6 @@ export class Hazelnut {
       this.send("error", {
         title: error.message,
         trace: error.stack,
-        stack: this.parseStack(error),
         ...this.prepareData(),
       });
     }
@@ -329,7 +304,6 @@ export class Hazelnut {
       title: error.message,
       trace: error.stack,
       severity: "warning",
-      stack: ErrorStackParser.parse(error),
       ...this.prepareData(),
     };
 

@@ -72,17 +72,4 @@ export type HazelnutOptions = {
    * Application environment
    */
   environment?: "development" | "production" | "staging" | "local";
-  /**
-   * Enable sourcemap
-   * If true, errors will be mapped to the original source code
-   *
-   * @default false
-   */
-  sourcemap?: boolean;
-  /**
-   * Source map url parser
-   *
-   * @default file => file + ".map"
-   */
-  sourceMapUrlParser?: (file: string) => string;
 };
