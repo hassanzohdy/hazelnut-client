@@ -1,10 +1,11 @@
 {
     "name": "@mentoor.io/hazelnut-client",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "description": "Web Client SDK for Hazelnut",
     "main": "src/index.ts",
     "dependencies": {
         "@mongez/events": "^2.1.0",
+        "@mongez/http": "^2.2.10",
         "@mongez/encryption": "^1.0.4",
         "@mongez/reinforcements": "^2.3.10"
     },
